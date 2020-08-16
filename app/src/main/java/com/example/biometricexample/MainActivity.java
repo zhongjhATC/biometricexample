@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         mViewHolder.btnBiometric.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showBiometricPrompt();
+                startBiometricPrompt();
             }
         });
         init();
@@ -91,16 +91,16 @@ public class MainActivity extends AppCompatActivity {
      */
     private void showBiometric() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            showBiometricPrompt();
+            startBiometricPrompt();
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-
+            startFingerprint();
         }
     }
 
     /**
      * 生物认证的setting
      */
-    private void showBiometricPrompt() {
+    private void startBiometricPrompt() {
         // 这种版本是可以取消的
         BiometricPrompt.PromptInfo promptInfo =
                 new BiometricPrompt.PromptInfo.Builder()
@@ -156,7 +156,12 @@ public class MainActivity extends AppCompatActivity {
         biometricPrompt.authenticate(promptInfo);
     }
 
-    private void
+    /**
+     * 6.0的指纹认证
+     */
+    private void startFingerprint() {
+        FingerprintManager fingerprintManager = (FingerprintManager) MainActivity.this.getSystemService(Context.FINGERPRINT_SERVICE);
+    }
 
     public static class ViewHolder {
 
