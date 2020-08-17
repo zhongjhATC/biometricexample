@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
@@ -13,6 +14,7 @@ import android.widget.Toast;
 import java.util.concurrent.Executor;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
@@ -24,16 +26,17 @@ import androidx.biometric.BiometricPrompt;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private Handler handler = new Handler();
+    ViewHolder mViewHolder;
+    private static CancellationSignal cancellationSignal = null; // 用于取消指纹解锁
 
+    private Handler handler = new Handler(); // 用于生物特征解锁的
+    // 用于生物特征解锁的
     private Executor executor = new Executor() {
         @Override
         public void execute(Runnable command) {
             handler.post(command);
         }
     };
-
-    ViewHolder mViewHolder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +46,14 @@ public class MainActivity extends AppCompatActivity {
         mViewHolder.btnBiometric.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startBiometricPrompt();
+                showBiometric();
+            }
+        });
+        mViewHolder.btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (cancellationSignal != null)
+                    cancellationSignal.cancel();
             }
         });
         init();
@@ -159,18 +169,65 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 6.0的指纹认证
      */
+    @RequiresApi(api = Build.VERSION_CODES.M)
     private void startFingerprint() {
         FingerprintManager fingerprintManager = (FingerprintManager) MainActivity.this.getSystemService(Context.FINGERPRINT_SERVICE);
+        if (fingerprintManager != null && fingerprintManager.isHardwareDetected() && fingerprintManager.hasEnrolledFingerprints()) {
+            if (cancellationSignal == null) {
+                cancellationSignal = new CancellationSignal();
+            }
+
+            fingerprintAuthenticate(fingerprintManager, null, cancellationSignal, 0, new FingerprintManager.AuthenticationCallback() {
+                @Override
+                public void onAuthenticationError(int errorCode, CharSequence errString) {
+                    // 多次指纹密码验证错误后，进入此方法；并且，不可再验（短时间） errorCode是失败的次数
+                    super.onAuthenticationError(errorCode, errString);
+                }
+
+                @Override
+                public void onAuthenticationHelp(int helpCode, CharSequence helpString) {
+                    // 指纹验证失败，可再验，可能手指过脏，或者移动过快等原因。
+                    super.onAuthenticationHelp(helpCode, helpString);
+                }
+
+                @Override
+                public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
+                    // 指纹密码验证成功
+                    super.onAuthenticationSucceeded(result);
+                }
+
+                @Override
+                public void onAuthenticationFailed() {
+                    // 指纹验证失败，指纹识别失败，可再验，错误原因为：该指纹不是系统录入的指纹。
+                    super.onAuthenticationFailed();
+                }
+            }, null);
+        }
+    }
+
+    /**
+     * @param crypto   用于通过指纹验证取出AndroidKeyStore中的key的对象，用于加密
+     * @param cancel   用来取消指纹验证，如果想手动关闭验证，可以调用该参数的cancel方法
+     * @param flags    没什么意义，就是传0就好了
+     * @param callback 最重要，由于指纹信息是存在系统硬件中的，app是不可以访问指纹信息的，所以每次验证的时候，系统会通过这个callback告诉你是否验证通过、验证失败等
+     * @param handler  FingerPrint中的消息都通过这个Handler来传递消息，如果你传空，则默认创建一个在主线程上的Handler来传递消息，没什么用，传null好了
+     */
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void fingerprintAuthenticate(FingerprintManager fingerprintManager, FingerprintManager.CryptoObject crypto, CancellationSignal cancel,
+                                         int flags, FingerprintManager.AuthenticationCallback callback, Handler handler) {
+        fingerprintManager.authenticate(crypto, cancel, flags, callback, handler);
     }
 
     public static class ViewHolder {
 
         public TextView tvBiometric;
         public Button btnBiometric;
+        public Button btnCancel;
 
         public ViewHolder(MainActivity rootView) {
             this.tvBiometric = rootView.findViewById(R.id.tvBiometric);
             this.btnBiometric = rootView.findViewById(R.id.btnBiometric);
+            this.btnCancel = rootView.findViewById(R.id.btnCancel);
         }
 
     }
