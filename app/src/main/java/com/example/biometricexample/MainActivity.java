@@ -56,6 +56,13 @@ public class MainActivity extends AppCompatActivity {
                     cancellationSignal.cancel();
             }
         });
+        // 跳转到指纹设置界面
+        mViewHolder.btnToFingerprintSettingsActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FingerprintSettings.getInstance(MainActivity.this).startFingerprintActivity();
+            }
+        });
         init();
     }
 
@@ -218,16 +225,20 @@ public class MainActivity extends AppCompatActivity {
         fingerprintManager.authenticate(crypto, cancel, flags, callback, handler);
     }
 
+//    private void
+
     public static class ViewHolder {
 
         public TextView tvBiometric;
         public Button btnBiometric;
         public Button btnCancel;
+        public Button btnToFingerprintSettingsActivity;
 
         public ViewHolder(MainActivity rootView) {
             this.tvBiometric = rootView.findViewById(R.id.tvBiometric);
             this.btnBiometric = rootView.findViewById(R.id.btnBiometric);
             this.btnCancel = rootView.findViewById(R.id.btnCancel);
+            this.btnToFingerprintSettingsActivity = rootView.findViewById(R.id.btnToFingerprintSettingsActivity);
         }
 
     }
