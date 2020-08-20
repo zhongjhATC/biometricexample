@@ -10,7 +10,7 @@
         android:id="@+id/btnBiometric"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="识别"
+        android:text="开始识别"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -35,6 +35,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnCancel" />
+
+    <ImageView
+        android:id="@+id/imgFingerprint"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/ic_fingerprint"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/tvBiometric"

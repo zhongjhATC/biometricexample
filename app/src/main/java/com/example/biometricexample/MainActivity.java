@@ -1,6 +1,8 @@
 package com.example.biometricexample;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -8,6 +10,7 @@ import android.os.CancellationSignal;
 import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,6 +21,8 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
+import androidx.core.app.ActivityCompat;
+import androidx.core.hardware.fingerprint.FingerprintManagerCompat;
 
 /**
  * Android 6 使用 FingerprintManager 指纹授权
@@ -110,7 +115,10 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startBiometricPrompt();
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            startFingerprint();
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.USE_FINGERPRINT) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                startFingerprint();
+            }
         }
     }
 
@@ -189,26 +197,35 @@ public class MainActivity extends AppCompatActivity {
                 public void onAuthenticationError(int errorCode, CharSequence errString) {
                     // 多次指纹密码验证错误后，进入此方法；并且，不可再验（短时间） errorCode是失败的次数
                     super.onAuthenticationError(errorCode, errString);
+                    Toast.makeText(MainActivity.this, "多次错误，不可再验", Toast.LENGTH_SHORT).show();
+                    mViewHolder.imgFingerprint.setVisibility(View.GONE);
                 }
 
                 @Override
                 public void onAuthenticationHelp(int helpCode, CharSequence helpString) {
                     // 指纹验证失败，可再验，可能手指过脏，或者移动过快等原因。
                     super.onAuthenticationHelp(helpCode, helpString);
+                    Toast.makeText(MainActivity.this, "指纹验证失败", Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
                     // 指纹密码验证成功
                     super.onAuthenticationSucceeded(result);
+                    mViewHolder.imgFingerprint.setVisibility(View.GONE);
+                    Toast.makeText(MainActivity.this, "指纹密码验证成功", Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onAuthenticationFailed() {
                     // 指纹验证失败，指纹识别失败，可再验，错误原因为：该指纹不是系统录入的指纹。
                     super.onAuthenticationFailed();
+                    Toast.makeText(MainActivity.this, "指纹验证失败", Toast.LENGTH_SHORT).show();
                 }
             }, null);
+
+            // 显示指纹view
+            mViewHolder.imgFingerprint.setVisibility(View.VISIBLE);
         }
     }
 
@@ -233,12 +250,14 @@ public class MainActivity extends AppCompatActivity {
         public Button btnBiometric;
         public Button btnCancel;
         public Button btnToFingerprintSettingsActivity;
+        public ImageView imgFingerprint;
 
         public ViewHolder(MainActivity rootView) {
             this.tvBiometric = rootView.findViewById(R.id.tvBiometric);
             this.btnBiometric = rootView.findViewById(R.id.btnBiometric);
             this.btnCancel = rootView.findViewById(R.id.btnCancel);
             this.btnToFingerprintSettingsActivity = rootView.findViewById(R.id.btnToFingerprintSettingsActivity);
+            this.imgFingerprint = rootView.findViewById(R.id.imgFingerprint);
         }
 
     }
